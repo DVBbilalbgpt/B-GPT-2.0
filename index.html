@@ -320,4 +320,245 @@
               <option value="16:9">Geniş Ekran (16:9)</option>
               <option value="9:16">Dikey / Hikaye (9:16)</option>
               <option value="4:3">Standart (4:3)</option>
-            </sel
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-zinc-800">
+        <button onclick="toggleImageModal(false)" class="px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-xs text-zinc-300">İptal</button>
+        <button onclick="generateImageFromModal()" class="px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs transition">Görseli Oluştur</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // HARDCODED DEFAULT API KEY (Local & Demo Test için Entegre Edildi)
+    const DEFAULT_API_KEY = "AQ.Ab8RN6Ke1jhiIQ2QjqEaFwsD_NIlIgPAKB-HXiTZCTKzvmINmg";
+
+    let apiKey = localStorage.getItem('bgpt_api_key') || DEFAULT_API_KEY;
+    let attachedBase64Image = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      document.getElementById('apiKeyInput').value = apiKey;
+    });
+
+    function toggleApiKeyModal(show) {
+      document.getElementById('apiKeyModal').classList.toggle('hidden', !show);
+    }
+
+    function toggleImageModal(show) {
+      document.getElementById('imageModal').classList.toggle('hidden', !show);
+    }
+
+    function saveApiKey() {
+      const val = document.getElementById('apiKeyInput').value.trim();
+      if (val) {
+        apiKey = val;
+        localStorage.setItem('bgpt_api_key', apiKey);
+        alert('API Key kaydedildi!');
+        toggleApiKeyModal(false);
+      }
+    }
+
+    function clearChat() {
+      const chatContainer = document.getElementById('chatContainer');
+      chatContainer.innerHTML = `
+        <div id="welcomeHero" class="flex flex-col items-center justify-center min-h-[65vh] text-center px-4 space-y-6 animate-in fade-in">
+          <div class="flex flex-col items-center">
+            <div class="w-24 h-24 sm:w-28 sm:h-28 mb-3">
+              <svg viewBox="0 0 500 500" class="w-full h-full drop-shadow-[0_4px_20px_rgba(0,242,254,0.5)]">
+                <circle cx="250" cy="250" r="230" fill="url(#hDvbGlow)" />
+                <g transform="translate(250,250)">
+                  <path d="M 0,-160 C 68,-160 130,-120 145,-52 C 155,-12 140,40 105,75 L 75,48 C 98,22 108,-12 98,-42 C 88,-88 48,-118 0,-118 Z" fill="url(#hDvbCyan)" stroke="#ffffff" stroke-width="3.5"/>
+                  <g transform="rotate(60)"><path d="M 0,-160 C 68,-160 130,-120 145,-52 C 155,-12 140,40 105,75 L 75,48 C 98,22 108,-12 98,-42 C 88,-88 48,-118 0,-118 Z" fill="url(#hDvbPurple)" stroke="#ffffff" stroke-width="3.5"/></g>
+                  <g transform="rotate(120)"><path d="M 0,-160 C 68,-160 130,-120 145,-52 C 155,-12 140,40 105,75 L 75,48 C 98,22 108,-12 98,-42 C 88,-88 48,-118 0,-118 Z" fill="url(#hDvbCyan)" stroke="#ffffff" stroke-width="3.5"/></g>
+                  <g transform="rotate(180)"><path d="M 0,-160 C 68,-160 130,-120 145,-52 C 155,-12 140,40 105,75 L 75,48 C 98,22 108,-12 98,-42 C 88,-88 48,-118 0,-118 Z" fill="url(#hDvbPurple)" stroke="#ffffff" stroke-width="3.5"/></g>
+                  <g transform="rotate(240)"><path d="M 0,-160 C 68,-160 130,-120 145,-52 C 155,-12 140,40 105,75 L 75,48 C 98,22 108,-12 98,-42 C 88,-88 48,-118 0,-118 Z" fill="url(#hDvbCyan)" stroke="#ffffff" stroke-width="3.5"/></g>
+                  <g transform="rotate(300)"><path d="M 0,-160 C 68,-160 130,-120 145,-52 C 155,-12 140,40 105,75 L 75,48 C 98,22 108,-12 98,-42 C 88,-88 48,-118 0,-118 Z" fill="url(#hDvbPurple)" stroke="#ffffff" stroke-width="3.5"/></g>
+                  <circle cx="0" cy="0" r="78" fill="#021526" stroke="#00f2fe" stroke-width="6"/>
+                </g>
+                <text x="250" y="270" font-family="sans-serif" font-size="84" font-weight="900" letter-spacing="2" text-anchor="middle" fill="#ffffff">DVB</text>
+              </svg>
+            </div>
+            <div class="text-xs sm:text-sm font-bold tracking-widest text-zinc-300 uppercase">DVB TECHNOLOGIES</div>
+            <div class="text-[10px] text-zinc-500 font-medium tracking-wide">SMART SOLUTIONS FOR THE FUTURE</div>
+          </div>
+          <div class="space-y-2">
+            <h2 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+              B-GPT <span class="bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">Yapay Zeka</span>
+            </h2>
+            <p class="text-zinc-400 text-xs sm:text-sm max-w-md mx-auto leading-relaxed">
+              Kusursuz doğrulukta bilgi, yüksek kaliteli görsel oluşturma ve kodlama yeteneklerine sahip bağımsız OLED yapay zeka asistanı.
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    function handleKeyDown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleChatSubmit(e);
+      }
+    }
+
+    function sendQuickPrompt(promptText) {
+      document.getElementById('chatInput').value = promptText;
+      handleChatSubmit(new Event('submit'));
+    }
+
+    function handleImageAttach(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          attachedBase64Image = e.target.result;
+          document.getElementById('attachedImagePreview').src = attachedBase64Image;
+          document.getElementById('imagePreviewContainer').classList.remove('hidden');
+        }
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function removeAttachedImage() {
+      attachedBase64Image = null;
+      document.getElementById('imageInput').value = '';
+      document.getElementById('imagePreviewContainer').classList.add('hidden');
+    }
+
+    function appendMessage(role, text, imageUrl = null) {
+      const hero = document.getElementById('welcomeHero');
+      if (hero) hero.remove();
+
+      const chatContainer = document.getElementById('chatContainer');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `flex gap-3 ${role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in`;
+
+      if (role === 'user') {
+        msgDiv.innerHTML = `
+          <div class="max-w-[85%] sm:max-w-[75%] bg-zinc-900 border border-zinc-800 text-zinc-100 p-3.5 rounded-2xl rounded-tr-none text-xs sm:text-sm space-y-2">
+            ${imageUrl ? `<img src="${imageUrl}" class="max-w-xs rounded-lg border border-zinc-700 mb-2">` : ''}
+            <p class="whitespace-pre-wrap">${text}</p>
+          </div>
+        `;
+      } else {
+        const parsedText = marked.parse(text);
+        msgDiv.innerHTML = `
+          <div class="w-8 h-8 rounded-xl bg-cyan-950 border border-cyan-500/40 flex items-center justify-center shrink-0 text-cyan-400 font-bold text-xs">
+            B
+          </div>
+          <div class="max-w-[90%] sm:max-w-[80%] bg-zinc-950 border border-zinc-800/80 p-4 rounded-2xl rounded-tl-none text-xs sm:text-sm prose prose-invert max-w-none">
+            ${parsedText}
+          </div>
+        `;
+      }
+
+      chatContainer.appendChild(msgDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+      hljs.highlightAll();
+    }
+
+    async function handleChatSubmit(e) {
+      if (e) e.preventDefault();
+      const inputEl = document.getElementById('chatInput');
+      const prompt = inputEl.value.trim();
+
+      if (!prompt && !attachedBase64Image) return;
+
+      const currentImg = attachedBase64Image;
+      appendMessage('user', prompt, currentImg);
+      inputEl.value = '';
+      removeAttachedImage();
+
+      if (!apiKey) {
+        appendMessage('assistant', '⚠️ **API Anahtarı Eksik:** Lütfen sağ üstteki **API Anahtarı** butonuna tıklayarak geçerli bir Gemini API Key girin.');
+        return;
+      }
+
+      // Loader ekle
+      const chatContainer = document.getElementById('chatContainer');
+      const loadingDiv = document.createElement('div');
+      loadingDiv.id = 'activeLoader';
+      loadingDiv.className = 'flex gap-3 justify-start items-center text-xs text-cyan-400 animate-pulse';
+      loadingDiv.innerHTML = `<div class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></div> B-GPT düşünüyor ve yanıt hazırlıyor...`;
+      chatContainer.appendChild(loadingDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      try {
+        const parts = [{ text: prompt }];
+        if (currentImg) {
+          const base64Data = currentImg.split(',')[1];
+          const mimeType = currentImg.split(';')[0].split(':')[1];
+          parts.push({
+            inline_data: {
+              mime_type: mimeType,
+              data: base64Data
+            }
+          });
+        }
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: parts }] })
+        });
+
+        const data = await response.json();
+        document.getElementById('activeLoader')?.remove();
+
+        if (data.candidates && data.candidates[0].content.parts[0].text) {
+          const replyText = data.candidates[0].content.parts[0].text;
+          appendMessage('assistant', replyText);
+        } else if (data.error) {
+          appendMessage('assistant', `❌ **API Hatası:** ${data.error.message || 'Bilinmeyen bir hata oluştu.'}`);
+        }
+      } catch (err) {
+        document.getElementById('activeLoader')?.remove();
+        appendMessage('assistant', `❌ **Bağlantı Hatası:** ${err.message}`);
+      }
+    }
+
+    function generateImageFromModal() {
+      const p = document.getElementById('modalImagePrompt').value.trim();
+      const style = document.getElementById('modalImageStyle').value;
+      const aspect = document.getElementById('modalImageAspect').value;
+
+      if (!p) return;
+      toggleImageModal(false);
+      const fullPrompt = `görsel oluştur: ${p}, Stil: ${style}, Oran: ${aspect}`;
+      sendQuickPrompt(fullPrompt);
+    }
+
+    function toggleVoiceInput() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('Tarayıcınız ses tanıma özelliğini desteklemiyor.');
+        return;
+      }
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'tr-TR';
+      
+      const btn = document.getElementById('voiceBtn');
+      btn.classList.add('text-red-400', 'animate-pulse');
+
+      recognition.onresult = (e) => {
+        document.getElementById('chatInput').value = e.results[0][0].transcript;
+        btn.classList.remove('text-red-400', 'animate-pulse');
+      };
+
+      recognition.onerror = () => {
+        btn.classList.remove('text-red-400', 'animate-pulse');
+      };
+
+      recognition.onend = () => {
+        btn.classList.remove('text-red-400', 'animate-pulse');
+      };
+
+      recognition.start();
+    }
+  </script>
+</body>
+</html>

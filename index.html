@@ -520,6 +520,9 @@
       } catch (err) {
         document.getElementById('activeLoader')?.remove();
         appendMessage('assistant', `❌ **Bağlantı Hatası:** ${err.message}`);
+            document.getElementById('activeloader')?.remove();
+        appendMessage('assistant', replyText);
+    
       }
     }
 

@@ -521,18 +521,7 @@
         }
         const replyText = data.choices[0].message.content;
         
-        
-        
-        
-
     
-
-        const data = await response.json();
-        document.getElementById('activeLoader')?.remove();
-
-        if (data.candidates && data.candidates[0].content.parts[0].text) {
-          const replyText = data.candidates[0].content.parts[0].text;
-          appendMessage('assistant', replyText);
         } else if (data.error) {
           appendMessage('assistant', `❌ **API Hatası:** ${data.error.message || 'Bilinmeyen bir hata oluştu.'}`);
         }

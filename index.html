@@ -463,79 +463,85 @@
     }
 
     async function handleChatSubmit(e) {
-      if (e) e.preventDefault();
-      const inputEl = document.getElementById('chatInput');
-      const prompt = inputEl.value.trim();
+    if (e) e.preventDefault();
+    const inputEl = document.getElementById('chatInput');
+    const prompt = inputEl.value.trim();
 
-      if (!prompt && !attachedBase64Image) return;
+    if (!prompt && !attachedBase64Image) return;
 
-      const currentImg = attachedBase64Image;
-      appendMessage('user', prompt, currentImg);
-      inputEl.value = '';
-      removeAttachedImage();
+    const currentImg = attachedBase64Image;
+    appendMessage('user', prompt, currentImg);
+    inputEl.value = '';
+    removeAttachedImage();
 
-      if (!apiKey) {
-        appendMessage('assistant', '⚠️ **API Anahtarı Eksik:** Lütfen sağ üstteki **API Anahtarı** butonuna tıklayarak geçerli bir Gemini API Key girin.');
+    // Key yoksa varsayılanı kullan
+    const currentApiKey = apiKey || DEFAULT_API_KEY;
+
+    if (!currentApiKey) {
+        appendMessage('assistant', '⚠️ **API Anahtarı Eksik:** Lütfen sağ üstteki **API Anahtarı** butonundan Gemini API anahtarınızı girin.');
         return;
-      }
+    }
 
-      // Loader ekle
-      const chatContainer = document.getElementById('chatContainer');
-      const loadingDiv = document.createElement('div');
-      loadingDiv.id = 'activeLoader';
-      loadingDiv.className = 'flex gap-3 justify-start items-center text-xs text-cyan-400 animate-pulse';
-      loadingDiv.innerHTML = `<div class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></div> B-GPT düşünüyor ve yanıt hazırlıyor...`;
-      chatContainer.appendChild(loadingDiv);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
+    // Loader (Yükleniyor) Ekle
+    const chatContainer = document.getElementById('chatContainer');
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'activeLoader';
+    loadingDiv.className = 'flex gap-3 justify-start items-center text-xs text-cyan-400 animate-pulse';
+    loadingDiv.innerHTML = '<div class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></div> B-GPT düşünüyor...';
+    chatContainer.appendChild(loadingDiv);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
 
-      try {
-        const parts = [{ text: prompt }];
+    try {
+        const contentsParts = [{ text: prompt }];
+
+        // Eğer kullanıcı görsel yüklediyse ekle
         if (currentImg) {
-          const base64Data = currentImg.split(',')[1];
-          const mimeType = currentImg.split(';')[0].split(':')[1];
-          parts.push({
-            inline_data: {
-              mime_type: mimeType,
-              data: base64Data
-            }
-          });
+            const base64Data = currentImg.split(',')[1];
+            const mimeType = currentImg.split(';')[0].split(':')[1];
+            contentsParts.push({
+                inline_data: {
+                    mime_type: mimeType,
+                    data: base64Data
+                }
+            });
         }
 
-                                                let response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        // Gemini API İsteği
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentApiKey}`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'llama-3.3-70b-versatile',
-                messages: [
-                    { role: 'system', content: 'Sen B-GPT adında gelişmiş bir yapay zeka asistanısın. DVB Technologies tarafından geliştirildin.' },
-                    { role: 'user', content: parts[0].text }
-                ]
+                system_instruction: {
+                    parts: [{ text: "Sen B-GPT adında gelişmiş bir yapay zeka asistanısın. DVB Technologies tarafından geliştirildin." }]
+                },
+                contents: [{
+                    parts: contentsParts
+                }]
             })
         });
 
         const data = await response.json();
-        if (data.error) {
-            throw new Error(data.error.message);
-        }
-        const replyText = data.choices[0].message.content;
         
-    
-        } else if (data.error) {
-          appendMessage('assistant', `❌ **API Hatası:** ${data.error.message || 'Bilinmeyen bir hata oluştu.'}`);
+        document.getElementById('activeLoader')?.remove();
+
+        if (data.error) {
+            appendMessage('assistant', `❌ **API Hatası:** ${data.error.message || 'Bilinmeyen bir hata oluştu.'}`);
+        } else if (data.candidates && data.candidates[0].content.parts[0].text) {
+            const replyText = data.candidates[0].content.parts[0].text;
+            appendMessage('assistant', replyText);
+        } else {
+            appendMessage('assistant', '❌ Yanıt alınamadı, tekrar deneyin.');
         }
-      } catch (err) {
+
+    } catch (err) {
         document.getElementById('activeLoader')?.remove();
         appendMessage('assistant', `❌ **Bağlantı Hatası:** ${err.message}`);
-            document.getElementById('activeloader')?.remove();
-        appendMessage('assistant', replyText);
-    
-      }
     }
+    }
+    
 
-    function generateImageFromModal() {
       const p = document.getElementById('modalImagePrompt').value.trim();
       const style = document.getElementById('modalImageStyle').value;
       const aspect = document.getElementById('modalImageAspect').value;

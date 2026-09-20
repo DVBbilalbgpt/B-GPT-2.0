@@ -536,22 +536,23 @@
             appendMessage('assistant', '❌ Yanıt alınamadı, tekrar deneyin.');
         }
 
-    } catch (err) {
+      } catch (err) {
         document.getElementById('activeLoader')?.remove();
         appendMessage('assistant', `❌ **Bağlantı Hatası:** ${err.message}`);
     }
-    }
+}
+
+function generateImageFromModal() {
+    const p = document.getElementById('modalImagePrompt').value.trim();
+    const style = document.getElementById('modalImageStyle').value;
+    const aspect = document.getElementById('modalImageAspect').value;
+
+    if (!p) return;
+    toggleImageModal(false);
+    const fullPrompt = `görsel oluştur: ${p}, Stil: ${style}, Oran: ${aspect}`;
+    sendQuickPrompt(fullPrompt);
+}
     
-
-      const p = document.getElementById('modalImagePrompt').value.trim();
-      const style = document.getElementById('modalImageStyle').value;
-      const aspect = document.getElementById('modalImageAspect').value;
-
-      if (!p) return;
-      toggleImageModal(false);
-      const fullPrompt = `görsel oluştur: ${p}, Stil: ${style}, Oran: ${aspect}`;
-      sendQuickPrompt(fullPrompt);
-    }
 
     function toggleVoiceInput() {
       if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {

@@ -337,7 +337,8 @@ const DEFAULT_API_KEY = atob(ENCODED_KEY);
     
     
 
-    let apiKey = localStorage.getItem('bgpt_api_key') || DEFAULT_API_KEY;
+    let apiKey = DEFAULT_API_KEY;
+    
     let attachedBase64Image = null;
 
     document.addEventListener('DOMContentLoaded', () => {

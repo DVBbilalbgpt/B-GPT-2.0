@@ -490,20 +490,21 @@ const DEFAULT_API_KEY = atob(ENCODED_KEY);
     chatContainer.appendChild(loadingDiv);
     chatContainer.scrollTop = chatContainer.scrollHeight;
 
-    try {
-        const contentsParts = [{ text: prompt }];
-
-        // Eğer kullanıcı görsel yüklediyse ekle
-        if (currentImg) {
-            const base64Data = currentImg.split(',')[1];
-            const mimeType = currentImg.split(';')[0].split(':')[1];
-            contentsParts.push({
-                inline_data: {
-                    mime_type: mimeType,
-                    data: base64Data
-                }
-            });
-        }
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${apiKey}`
+  },
+  body: JSON.stringify({
+    model: "gpt-4o-mini",
+    messages: [
+      { role: "system", content: "Sen B-GPT adında gelişmiş bir yapay zeka asistanısın. DVB Digital Studios tarafından geliştirildin." },
+      { role: "user", content: prompt }
+    ]
+  })
+});
+      
 
         // 511. Satırdan itibaren başlayacak olan yeni Fetch yapısı:
 const response = await fetch("https://api.openai.com/v1/chat/completions", {
